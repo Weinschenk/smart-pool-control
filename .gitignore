@@ -15,3 +15,6 @@
 # Mac OS
 .DS_Store
 q
+
+# Environment file
+/packages/smart-pool-controller/environment.py
