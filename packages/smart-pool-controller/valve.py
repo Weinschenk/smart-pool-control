@@ -53,6 +53,10 @@ def check_state():
     """
     global set_position
 
+    if PIN_VALVE_CONTROL_REGULAR.value() is 1 and PIN_VALVE_CONTROL_SOLAR.value() is 1:
+        print("Control wrong and is ignored")
+        return check_state()
+
     message = 'POS: {0} - CR: {1} - CS: {2}'.format(set_position,
                                                     PIN_VALVE_CONTROL_REGULAR.value(),
                                                     PIN_VALVE_CONTROL_SOLAR.value())

@@ -43,7 +43,7 @@ def main():
         client.subscribe(TOPIC_SUB)
         message = '{{"rssi": "{0}"}}'.format(networking.get_wifi_strength())
         print_and_publish(message, SUB_TOPIC_STATE)
-        wdt = WDT(timeout=8000)  # enable it with a timeout of 2s
+        wdt = WDT(timeout=20000)  # enable it with a timeout of 2s
 
         global ONE_WIRE_PIN
         sensors = init_temperature_sensors(ONE_WIRE_PIN)

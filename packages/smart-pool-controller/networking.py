@@ -28,16 +28,14 @@ def connect():
 def mqtt_connect(callback, lwt_topic):
     mqtt_server = environment.MQTT_SERVER()
     print(f'Connecting to MQTT broker {mqtt_server}')
-    ssl_params = {'server_hostname': mqtt_server}
+    #ssl_parameters = {'server_hostname': mqtt_server}
 
     client = MQTTClient(client_id=CLIENT_ID,
                         server=mqtt_server,
-                        port=8883,
+                        port=1883,
                         user=environment.MQTT_USER(),
                         password=environment.MQTT_PASSWORD(),
-                        keepalive=3600,
-                        ssl=True,
-                        ssl_params=ssl_params)
+                        keepalive=3600)
     client.set_callback(callback)
     client.set_last_will(lwt_topic, 'dead', retain=False, qos=1)
     client.connect()
