@@ -1,10 +1,11 @@
-from time import sleep
+from builtins import print
+from time import sleep, time
 import machine
 import network
 from umqtt.robust import MQTTClient
 import environment
 
-CLIENT_ID = 'smart-irrigation-control'
+CLIENT_ID = 'smart-pool-control'
 
 def connect():
     ssid = environment.SSID()
@@ -30,7 +31,8 @@ def mqtt_connect(callback, lwt_topic):
     print(f'Connecting to MQTT broker {mqtt_server}')
     #ssl_parameters = {'server_hostname': mqtt_server}
 
-    client = MQTTClient(client_id=CLIENT_ID,
+    client_session_id = get_client_session_id()
+    client = MQTTClient(client_id=client_session_id,
                         server=mqtt_server,
                         port=1883,
                         user=environment.MQTT_USER(),
@@ -45,3 +47,7 @@ def mqtt_connect(callback, lwt_topic):
 
 def get_wifi_strength():
     return wlan.status('rssi')
+
+
+def get_client_session_id():
+    return '{0}-{1}'.format(CLIENT_ID, time())
