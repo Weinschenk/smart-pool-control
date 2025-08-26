@@ -1,21 +1,35 @@
 from builtins import print
-from machine import Pin
+# Safe import for host testing
+try:
+    from machine import Pin  # type: ignore
+except ImportError:  # pragma: no cover - host fallback
+    class Pin:  # minimal dummy
+        IN = 0
+        OUT = 1
+        PULL_DOWN = 2
+        def __init__(self, pin, mode=None, pull=None):
+            self._v = 1
+        def value(self, v=None):
+            if v is None:
+                return self._v
+            self._v = v
+            return self._v
 
 # ***************************************
 # ********* Valve configuration *********
 # ***************************************
 
-# Valve control pins
+# Valve control pins (inputs reporting current physical position)
 PIN_VALVE_CONTROL_REGULAR = Pin(19, Pin.IN, Pin.PULL_DOWN)
 PIN_VALVE_CONTROL_SOLAR = Pin(18, Pin.IN, Pin.PULL_DOWN)
 
-# Valve pins
+# Valve drive pins (outputs to move valve)
 PIN_VALVE_REGULAR = Pin(22, Pin.OUT)
 PIN_VALVE_REGULAR.value(1)
 PIN_VALVE_SOLAR = Pin(23, Pin.OUT)
 PIN_VALVE_SOLAR.value(1)
 
-# 24V relay
+# 24V relay (power for valve motor)
 PIN_24V_RELAY = Pin(26, Pin.OUT)
 PIN_24V_RELAY.value(0)
 
@@ -36,12 +50,14 @@ class State:
 
 
 def switch_valve(expected_position):
+    # Enable power
     PIN_24V_RELAY.value(1)
 
+    # Default both high (inactive)
     PIN_VALVE_REGULAR.value(1)
     PIN_VALVE_SOLAR.value(1)
 
-    if expected_position is Position.REGULAR:
+    if expected_position == Position.REGULAR:
         print("Setting valve to regular")
         PIN_VALVE_REGULAR.value(0)
     else:
@@ -51,25 +67,23 @@ def switch_valve(expected_position):
 
 def read_position():
     """
-        Checks if the valve is in the desired position.
-        A return value of True means the valve is in the desired position.
-        :return: State
-        """
-    print('CR: {0} CS: {1}'.format(PIN_VALVE_CONTROL_REGULAR.value(),
-                                   PIN_VALVE_CONTROL_SOLAR.value()))
+    Determine current valve position from control inputs.
+    Returns one of Position.REGULAR / Position.SOLAR / Position.UNKNOWN
+    """
+    cr = PIN_VALVE_CONTROL_REGULAR.value()
+    cs = PIN_VALVE_CONTROL_SOLAR.value()
+    print('CR: {0} CS: {1}'.format(cr, cs))
 
-    if PIN_VALVE_CONTROL_REGULAR.value() is 1 and PIN_VALVE_CONTROL_SOLAR.value() is 1:
+    if cr == 1 and cs == 1:
+        # Invalid state (both pulled up) -> unknown
         print("Control wrong and is ignored")
         return Position.UNKNOWN
 
-    # Replace with  match/case once available in MicroPython
-    # 0 connected with ground 1 not connected
-    if PIN_VALVE_CONTROL_REGULAR.value() == 1:
+    if cr == 1:
         return Position.REGULAR
-    elif PIN_VALVE_CONTROL_SOLAR.value() == 1:
+    if cs == 1:
         return Position.SOLAR
-    else:
-        return Position.UNKNOWN
+    return Position.UNKNOWN
 
 
 def switch_off():
@@ -79,9 +93,9 @@ def switch_off():
 
 
 def get_position_from_string(payload):
-    if payload.find(REGULAR) is not -1:
+    low = payload.lower()
+    if REGULAR in low:
         return Position.REGULAR
-    elif payload.find(SOLAR) is not -1:
+    if SOLAR in low:
         return Position.SOLAR
-    else:
-        return Position.UNKNOWN
+    return Position.UNKNOWN
